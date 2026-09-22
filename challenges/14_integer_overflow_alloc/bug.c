@@ -49,28 +49,44 @@ typedef struct {
     int width;
     int height;
     int channels;
-    int nbytes;              
+    size_t nbytes;              
     unsigned char *px;
 } Image;
 
 static Image *image_new(int width, int height, int channels) {
+    // 24바이트 할당
     Image *img = malloc(sizeof *img);
     if (!img) { perror("malloc"); exit(1); }
     img->width = width;
     img->height = height;
     img->channels = channels;
 
-    img->nbytes = width * height * channels;
+    // width * height * channels만큼 할당?!?
+    // img->nbytes의 값이 0?...
+    // img->nbytes의 값이 할당이 안 되어서 생기는 문제라고 추측
+    size_t tmp = SIZE_MAX / (size_t)channels;
+    int isBig = 0;
+    
+    if ((size_t)width >= tmp / (size_t)height)
+    {
+        isBig = 1;
+    }
+
+    if (isBig) exit(1);
+    
+    img->nbytes = (size_t)width * (size_t)height * (size_t)channels;
+
     img->px = malloc((size_t)img->nbytes);     
     if (!img->px) { perror("malloc px"); exit(1); }
     return img;
 }
 
+
 static void image_fill(Image *img, unsigned char value) {
 
     size_t total = (size_t)img->width * (size_t)img->height * (size_t)img->channels;
     for (size_t i = 0; i < total; i++) {
-        img->px[i] = value;                     
+        img->px[i] = value;            // frame 0         
     }
 }
 
@@ -87,10 +103,10 @@ int main(void) {
      *               일 때가 3(RGB)일 때보다 오버플로가 더 쉽게 터질까?
      *               (해결 힌트: 크기 계산을 size_t 로 승격하고, 곱셈 오버플로를 검사한다) */
     Image *img = image_new(65536, 65536, 4);
-    printf("allocated nbytes(int)=%d for %dx%d x%d\n",
+    printf("allocated nbytes(int)=%zu for %dx%d x%d\n",
            img->nbytes, img->width, img->height, img->channels);
 
-    image_fill(img, 0xFF);                       
+    image_fill(img, 0xFF);                       // frame 1
 
     printf("px[0]=%u\n", img->px[0]);
     free(img->px);

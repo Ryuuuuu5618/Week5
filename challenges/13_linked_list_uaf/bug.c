@@ -78,10 +78,13 @@ static Job *filter_jobs(Job *head, int threshold, Audit *audit) {
     Job *cur = head;
 
     while (cur != NULL) {
-        if (cur->priority < threshold) {
-            audit_add(audit, cur->id);   
+        // threshold == 5
+        // 두 번째 반복부터 cur->priority에 접근불가? cur의 값은 있음
+        if (cur->priority < threshold) { // frame 0
+            audit_add(audit, cur->id);
+            Job *tmp = cur->next;   
             job_release(cur);            
-            cur = cur->next;             
+            cur = tmp;
         } else {
             Job *nx = cur->next;
             cur->next = NULL;
@@ -96,10 +99,11 @@ static Job *filter_jobs(Job *head, int threshold, Audit *audit) {
 int main(void) {
     Job *head = NULL;
     for (int i = 1; i <= 4000; i++)
+        // next 느낌으로 헤드 갱신 
         head = push_job(head, i, (i * 7) % 10);   
 
     Audit audit = {0};
-    head = filter_jobs(head, 5, &audit);           
+    head = filter_jobs(head, 5, &audit);       // frame 1    
 
     int remaining = 0;
     for (Job *c = head; c; c = c->next) remaining++;

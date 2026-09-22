@@ -46,22 +46,38 @@ static void append_field(char *buf, size_t cap, size_t *len, const char *field, 
     }
     size_t flen = strlen(field);
     for (size_t i = 0; i < flen; i++) {
-        buf[(*len)++] = field[i];         
+        if ((*len) >= cap - 1)
+        {   
+            buf[cap - 1] = '\0';
+            return;
+        }   
+
+        buf[(*len)++] = field[i];      
     }
     buf[*len] = '\0';
-    (void)cap;                            
+    // cap은 왜 버리지
+    // (void)cap;                       
 }
-
+// rec -> 문자열 가리키는 포인터
 static void build_record(char *rec, size_t cap) {
     const char *fields[] = {
         "id=1042", "name=Jonathan", "department=Engineering", "role=maintainer",
     };
+    // 배열의 길이 구하기 n = 4;
     int n = (int)(sizeof(fields) / sizeof(fields[0]));
 
     size_t len = 0;
     rec[0] = '\0';
     for (int i = 0; i < n; i++) {
+        // rec = 배열의 길이만 할당 + 내용 x
+        // cap = 24
+
         append_field(rec, cap, &len, fields[i], '|');   
+
+        if (cap - 1 == len)
+        {
+            return;
+        }
     }
 }
 
@@ -71,5 +87,5 @@ int main(void) {
     build_record(rec, sizeof rec);        
 
     printf("record = %s\n", rec);
-    return 0;                            
+    return 0;                       // frame 6     
 }

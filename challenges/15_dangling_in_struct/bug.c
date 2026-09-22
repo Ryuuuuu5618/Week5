@@ -51,7 +51,7 @@ typedef struct {
     User *user;             
     int   session_id;
 } Session;
-
+// (void)action은 뭐지, (void)action;-> 변수 일부로 버리기 + 일부로 void로 캐스팅해서 버림
 static int allow_all(const char *action) { (void)action; return 1; }
 
 static User *login(int uid, const char *name) {
@@ -65,7 +65,8 @@ static User *login(int uid, const char *name) {
 }
 
 static void logout(Session *s) {
-    free(s->user);         
+    free(s->user);        
+    s->user = NULL;
 }
 
 /* 감사 로그 항목. User 와 같은 크기라 해제된 청크를 재사용하기 쉽다. */
@@ -78,23 +79,31 @@ static char *audit_record(const char *event) {
 }
 
 static int handle_request(Session *s, const char *action) {
+    // fprintf(stderr, "오류가 발생했습니다!\n");
+    // NULL값을 역참조해서 에러 발생
 
-    return s->user->permission(action);    
+    if (s->user == NULL)
+    {
+        return 0;
+    }
+
+    return s->user->permission(action);    // frame 0
 }
 
 int main(void) {
     Session s;
     s.session_id = 1;
+    // print s.user -> $2 = (User *) 0x5555555592a0
     s.user = login(42, "alice");
 
     printf("first request allowed=%d\n", handle_request(&s, "read"));
-
+    // s->user 프리 -> 쓰레기값으로 덮힘
     logout(&s);                              
-
+    // print rec -> $4 = 0x5555555592a0 "YUUU\005" --> s.user의 주소를 그대로 이어받음...
     char *rec = audit_record("logout");      
     printf("%s\n", rec);
-    
-    printf("second request allowed=%d\n", handle_request(&s, "write"));
+    // 프리 이미 해버렸는데 왜 접근 하지....
+    printf("second request allowed=%d\n", handle_request(&s, "write")); // frame 1
 
     free(rec);
     return 0;

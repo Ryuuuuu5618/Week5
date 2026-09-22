@@ -61,35 +61,40 @@ typedef struct {
 } Row;
 
 static void parse_row(Row *r, const char *csv) {
+    // strdup 함수는 문자열을 복제하여 새로운 힙(Heap) 메모리 공간에 할당하는 함수
+    // strdup에서 malloc 해줌
+    // $2 = 0x5555555592a0 "id,name,dept,salary"
     r->base = strdup(csv);       
     if (!r->base) { perror("strdup"); exit(1); }
     r->n = 0;
 
     for (char *tok = strtok(r->base, ","); tok && r->n < MAX_FIELDS;
          tok = strtok(NULL, ",")) {
+        // r->fields에 ,를 기준으로 나눈 문자열 주소 저장
         r->fields[r->n++] = tok;  /* fields[0]=base, 나머지는 내부 포인터 */
     }
+    // r->fileds => $3 = {0x5555555592a0 "id", 0x5555555592a3 "name", 0x5555555592a8 "dept", 0x5555555592ad "salary", 0x0, 0x0, 0x0, 0x0}
 }
 
 static void row_print(const Row *r) {
     printf("%d fields:", r->n);
     for (int i = 0; i < r->n; i++) printf(" [%s]", r->fields[i]);
+    // 4 fields: [id] [name] [dept] [salary]
     printf("\n");
 }
 
 static void row_free(Row *r) {
-    for (int i = 0; i < r->n; i++) {
-        free(r->fields[i]);       
-    }
+    free(r->base);
     r->n = 0;
 }
 
 int main(void) {
+    // $1 = {base = 0xaa00000006 <error: Cannot access memory at address 0xaa00000006>, fields = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, n = -134325520}
     Row r;
     parse_row(&r, "id,name,dept,salary");
     row_print(&r);
 
-    row_free(&r);                 
+    row_free(&r);             // frame 2    
     printf("done\n");
     return 0;
 }
